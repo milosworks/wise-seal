@@ -1,0 +1,11 @@
+# DB
+/drizzle
+
+# build
+/build
+
+# env
+.env
+
+#node
+/node_modules
