@@ -33,7 +33,7 @@ const options = {
 }
 
 @Declare({
-	name: 'purge',
+	name: 'prune',
 	description: 'Delete messages using a filter',
 	defaultMemberPermissions: ['ManageMessages']
 })

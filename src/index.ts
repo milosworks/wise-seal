@@ -1,60 +1,12 @@
-import { join } from 'path'
-import {
-	Client,
-	Embed,
-	EntryPointCommand,
-	Logger,
-	ParseClient,
-	UsingClient
-} from 'seyfert'
-import { LogLevels } from 'seyfert/lib/common'
+import './config/logger'
+
+import { Client, EntryPointCommand, ParseClient, UsingClient } from 'seyfert'
 import { ActivityType, PresenceUpdateStatus } from 'seyfert/lib/types'
+
+import { join } from 'path'
 import { constants } from './config'
-import {
-	formatMemoryUsage,
-	getLoggerArgs,
-	logLevelColors
-} from './config/logger'
+import { sendLog } from './config/logger'
 import { dbclient } from './database'
-
-export let logger: Logger
-
-Logger.customize((_, level, args) => {
-	const date = new Date()
-	const ram = formatMemoryUsage(process.memoryUsage?.()?.rss ?? 0)
-
-	if (level !== LogLevels.Debug) {
-		client.messages
-			.write(constants.logsChannelId, {
-				embeds: [
-					new Embed()
-						.setTitle('Logging event')
-						.setDescription(`\`\`\`\n${args}\`\`\``)
-						.setColor(logLevelColors[level])
-						.addFields(
-							{
-								name: 'Level',
-								value: `\`${LogLevels[level].toUpperCase()}\``,
-								inline: true
-							},
-							{
-								name: 'Timestamp',
-								value: `\`[${date.toLocaleDateString()} ${date.toLocaleTimeString()}]\``,
-								inline: true
-							},
-							{
-								name: 'RAM Usage',
-								value: `\`${ram}\``,
-								inline: true
-							}
-						)
-				]
-			})
-			.catch(() => {})
-	}
-
-	return getLoggerArgs(level, args)
-})
 
 const client = new Client({
 	presence() {
@@ -73,6 +25,8 @@ const client = new Client({
 	}
 }) as UsingClient & Client
 
+client.logger = log as any
+
 client.commands!.onCommand = (file) => {
 	let cmd = new file()
 	if (cmd instanceof EntryPointCommand) return cmd
@@ -82,8 +36,14 @@ client.commands!.onCommand = (file) => {
 }
 
 client.start().then(async () => {
+	log.on('data', ({ level, message }) => {
+		if (level == 3) return
+
+		sendLog(client, level, message)
+	})
+
 	await dbclient.connect()
-	client.logger.info('Database connected')
+	log.info('Database connected')
 
 	return client.uploadCommands({
 		cachePath: join(process.cwd(), 'build/_seyfert_cache_commands.json')
@@ -97,4 +57,8 @@ declare module 'seyfert' {
 		withPrefix: false
 		asyncCache: false
 	}
+}
+
+declare global {
+	var log: import('winston').Logger
 }

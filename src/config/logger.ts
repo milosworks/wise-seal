@@ -1,53 +1,111 @@
+import { Client, Embed, UsingClient } from 'seyfert'
 import {
 	brightBlack,
 	ColorResolvable,
-	Logger,
-	LogLevels
+	cyan,
+	gray,
+	red,
+	yellow
 } from 'seyfert/lib/common'
+import winston from 'winston'
+import { constants } from '.'
 
-const name = '[Wise Seal]'
-
-export const logLevelColors: { [key in LogLevels]: ColorResolvable } = {
-	[LogLevels.Debug]: '#808080',
-	[LogLevels.Info]: '#0000FF',
-	[LogLevels.Warn]: '#FFA500',
-	[LogLevels.Error]: '#FF0000',
-	[LogLevels.Fatal]: '#8B0000'
+enum LogLevel {
+	debug,
+	info,
+	warn,
+	error
 }
 
-export function getLoggerArgs(level: LogLevels, args: unknown[]) {
-	// https://github.com/tiramisulabs/seyfert/blob/44c872de71546bfca0820f3eb02f66bcc347a591/src/common/it/logger.ts#L134
-	const consoleColor = Logger.colorFunctions.get(level) ?? Logger.noColor
-	const memoryData = process.memoryUsage?.()
+const colors: Record<number, ColorResolvable> = {
+	[LogLevel.debug]: '#696666',
+	[LogLevel.info]: '#00FFFF',
+	[LogLevel.warn]: '#F46416',
+	[LogLevel.error]: '#EF1B1B'
+}
+
+const colorConsole: Record<number, (str: string) => string> = {
+	[LogLevel.debug]: gray,
+	[LogLevel.info]: cyan,
+	[LogLevel.warn]: yellow,
+	[LogLevel.error]: red
+}
+
+const format = winston.format.printf(({ level, message }) => {
+	const ramUsage = process.memoryUsage().heapUsed
 	const date = new Date()
-	const log = [
-		brightBlack(formatMemoryUsage(memoryData?.rss ?? 0)),
-		brightBlack(
-			`[${date.toLocaleDateString()} ${date.toLocaleTimeString()}]`
-		),
-		consoleColor(Logger.prefixes.get(level) ?? 'DEBUG'),
-		name + ' >',
-		...args
-	]
+	const levelN = LogLevel[level as keyof typeof LogLevel]
 
-	return log
+	return `[RAM Usage ${brightBlack(
+		formatMemoryUsage(ramUsage)
+	)}] ${brightBlack(
+		`[${date.toLocaleDateString()} ${date.toLocaleTimeString()}]`
+	)} ${colorConsole[levelN](
+		`[${level.toUpperCase()}]`
+	)} [Wise Seal] > ${message}`
+})
+
+export const logger = winston.createLogger({
+	level: 'error',
+	format: winston.format.combine(format),
+	transports: [new winston.transports.Console()],
+	levels: Object.fromEntries(
+		Object.entries(LogLevel)
+			.filter(([_, value]) => typeof value === 'number')
+			.map(([key, value]) => [key.toLowerCase(), value])
+	) as Record<string, number>
+})
+
+global.log = logger
+
+export function sendLog(
+	client: UsingClient & Client<boolean>,
+	level: string,
+	msg: string
+) {
+	const date = new Date()
+	const levelN = LogLevel[level as keyof typeof LogLevel]
+
+	client.messages
+		.write(constants.logsChannelId, {
+			embeds: [
+				new Embed()
+					.setTitle('Logging event')
+					.setDescription(`\`\`\`\n${msg}\`\`\``)
+					.setColor(colors[levelN])
+					.addFields(
+						{
+							name: 'Level',
+							value: `\`${level.toUpperCase()}\``,
+							inline: true
+						},
+						{
+							name: 'Timestamp',
+							value: `\`[${date.toLocaleDateString()} ${date.toLocaleTimeString()}]\``,
+							inline: true
+						},
+						{
+							name: 'RAM Usage',
+							value: `\`${formatMemoryUsage(
+								process.memoryUsage().heapUsed
+							)}\``,
+							inline: true
+						}
+					)
+					.setTimestamp()
+			]
+		})
+		.catch(() => {})
 }
 
-export function formatMemoryUsage(bytes: number) {
-	const gigaBytes = bytes / 1024 ** 3
-	if (gigaBytes >= 1) {
-		return `[RAM Usage ${gigaBytes.toFixed(3)} GB]`
+function formatMemoryUsage(bytes: number): string {
+	const units = ['B', 'KB', 'MB', 'GB']
+	let unitIndex = 0
+
+	while (unitIndex < units.length - 1 && bytes >= 1024) {
+		bytes /= 1024
+		unitIndex++
 	}
 
-	const megaBytes = bytes / 1024 ** 2
-	if (megaBytes >= 1) {
-		return `[RAM Usage ${megaBytes.toFixed(2)} MB]`
-	}
-
-	const kiloBytes = bytes / 1024
-	if (kiloBytes >= 1) {
-		return `[RAM Usage ${kiloBytes.toFixed(2)} KB]`
-	}
-
-	return `[RAM Usage ${bytes.toFixed(2)} B]`
+	return `${bytes.toFixed(unitIndex === 3 ? 3 : 2)} ${units[unitIndex]}`
 }

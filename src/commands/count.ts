@@ -1,6 +1,7 @@
 import { Command, CommandContext, Declare } from 'seyfert'
 import { db } from '../database'
-import { count } from '../database/models/count'
+import { guilds } from '../database/models/guilds'
+import { users } from '../database/models/users'
 
 @Declare({
 	name: 'count',
@@ -8,13 +9,29 @@ import { count } from '../database/models/count'
 })
 export default class Count extends Command {
 	async run(ctx: CommandContext) {
-		let doc = await db.query.count.findFirst()
-		if (!doc) {
-			doc = (await db.insert(count).values({}).returning())![0]
+		let gDoc = await db.query.guilds.findFirst({
+			where: (u, { eq }) => eq(u.id, ctx.guildId!)
+		})
+		if (!gDoc) {
+			gDoc = (await db
+				.insert(guilds)
+				.values({ id: ctx.guildId! })
+				.returning())![0]
+		}
+
+		let uDoc = await db.query.users.findFirst({
+			where: (u, { eq }) => eq(u.id, ctx.author.id)
+		})
+		if (!uDoc) {
+			uDoc = (await db
+				.insert(users)
+				.values({ id: ctx.author.id })
+				.returning())![0]
 		}
 
 		ctx.write({
-			content: `Seal was mentioned **${doc.times}** times`
+			content: `You have mentioned "seal" **${uDoc.sealCount}** times in this server.\n
+			*Seal was mentioned **${gDoc.sealCount}** times in this server.*`
 		})
 	}
 }
