@@ -30,8 +30,8 @@ export default class Count extends Command {
 		}
 
 		ctx.write({
-			content: `You have mentioned "seal" **${uDoc.sealCount}** times in this server.\n
-			*Seal was mentioned **${gDoc.sealCount}** times in this server.*`
+			content: `You have mentioned "seal" **${uDoc.sealCount}** time(s) in this server.\n
+			*Seal was mentioned **${gDoc.sealCount}** time(s) in this server.*`
 		})
 	}
 }
