@@ -1,24 +1,24 @@
-import { Buffer } from 'buffer'
+import { Buffer } from 'node:buffer'
 import {
 	AttachmentBuilder,
 	Command,
-	CommandContext,
+	type CommandContext,
 	createStringOption,
 	Declare,
-	OnOptionsReturnObject,
+	type OnOptionsReturnObject,
 	Options,
 	type OKFunction
 } from 'seyfert'
-import { PassThrough } from 'stream'
+import { PassThrough } from 'node:stream'
 import ytdlpWrap from 'yt-dlp-wrap'
 
 const ytdlp = new ytdlpWrap('yt-dlp')
 
-const isURL = (url: string) => {
+const isUrl = (url: string) => {
 	try {
 		new URL(url)
 		return true
-	} catch (error) {
+	} catch (_) {
 		return false
 	}
 }
@@ -28,7 +28,7 @@ const options = {
 		description: 'The URL to download',
 		required: true,
 		value(data, ok: OKFunction<URL>, fail) {
-			if (isURL(data.value)) return ok(new URL(data.value))
+			if (isUrl(data.value)) return ok(new URL(data.value))
 
 			fail(`Invalid URL: ${data.value}`)
 		}
@@ -54,11 +54,11 @@ export default class Download extends Command {
 				'-S',
 				// Download the best video with either h264 or h265 codec,
 				// or the best video if there is no such video
-				`codec:h265`
+				'codec:h265'
 			])
 			.pipe(passThrough)
 
-		passThrough.on('data', (chunk) => {
+		passThrough.on('data', chunk => {
 			buffer.push(chunk)
 		})
 
@@ -76,19 +76,16 @@ export default class Download extends Command {
 			})
 		})
 
-		passThrough.on('error', (error) => {
+		passThrough.on('error', error => {
 			throw error
 		})
 	}
 
-	async onOptionsError(
-		context: CommandContext,
-		metadata: OnOptionsReturnObject
-	) {
+	async onOptionsError(context: CommandContext, metadata: OnOptionsReturnObject) {
 		await context.editOrReply({
 			content: Object.entries(metadata)
-				.filter((_) => _[1].failed)
-				.map((error) => `${error[0]}: ${error[1].value}`)
+				.filter(_ => _[1].failed)
+				.map(error => `${error[0]}: ${error[1].value}`)
 				.join('\n')
 		})
 	}

@@ -1,9 +1,16 @@
 import './config/logger'
 
-import { Client, EntryPointCommand, ParseClient, UsingClient } from 'seyfert'
+import {
+	Client,
+	ContextMenuCommand,
+	EntryPointCommand,
+	IgnoreCommand,
+	type ParseClient,
+	type UsingClient
+} from 'seyfert'
 import { ActivityType, PresenceUpdateStatus } from 'seyfert/lib/types'
+import { join } from 'node:path'
 
-import { join } from 'path'
 import { constants } from './config'
 import { sendLog } from './config/logger'
 import { dbclient } from './database'
@@ -22,22 +29,30 @@ const client = new Client({
 			since: Date.now(),
 			status: PresenceUpdateStatus.DoNotDisturb
 		}
+	},
+	commands: {
+		prefix: _ => {
+			return ['.']
+		}
 	}
 }) as UsingClient & Client
 
 client.logger = log as any
 
-client.commands!.onCommand = (file) => {
-	let cmd = new file()
+client.commands!.onCommand = file => {
+	const cmd = new file()
 	if (cmd instanceof EntryPointCommand) return cmd
 
 	cmd.guildId = [constants.guildId]
+
+	if (!(cmd instanceof ContextMenuCommand) && cmd.ignore === undefined) cmd.ignore = IgnoreCommand.Message
+
 	return cmd
 }
 
 client.start().then(async () => {
 	log.on('data', ({ level, message }) => {
-		if (level == 3) return
+		if (level === 3) return
 
 		sendLog(client, level, message)
 	})
@@ -54,7 +69,7 @@ declare module 'seyfert' {
 	interface UsingClient extends ParseClient<Client<true>> {}
 
 	interface InternalOptions {
-		withPrefix: false
+		withPrefix: true
 		asyncCache: false
 	}
 }

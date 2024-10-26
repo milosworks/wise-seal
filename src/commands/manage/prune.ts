@@ -38,27 +38,23 @@ const options = {
 	defaultMemberPermissions: ['ManageMessages']
 })
 @Options(options)
-export default class Count extends Command {
+export default class Prune extends Command {
 	async run(ctx: CommandContext<typeof options>) {
 		ctx.deferReply(true)
 
 		const { user, quantity, channel: inputChannel } = ctx.options
-		const channel = (inputChannel ||
-			ctx.channel()) as AllGuildTextableChannels
+		const channel = (inputChannel || ctx.channel()) as AllGuildTextableChannels
 
 		let lastId: string | undefined
 		let deleted = 0
 		let errored = false
 
-		await chunks(quantity, 100, async (limit) => {
+		await chunks(quantity, 100, async limit => {
 			try {
-				const messages = await ctx.client.channels.fetchMessages(
-					channel.id,
-					{
-						limit: limit == 100 ? limit - 1 : limit,
-						...(lastId ? { before: lastId } : {})
-					}
-				)
+				const messages = await ctx.client.channels.fetchMessages(channel.id, {
+					limit: limit == 100 ? limit - 1 : limit,
+					...(lastId ? { before: lastId } : {})
+				})
 				if (!messages.length) return [0, false]
 				if (messages.length == 1) {
 					await messages[0].delete('Purging messages')
@@ -66,18 +62,12 @@ export default class Count extends Command {
 					return [1, false]
 				}
 
-				const ids = messages
-					.filter((msg) => (user ? msg.author.id == user.id : true))
-					.map((msg) => msg.id)
+				const ids = messages.filter(msg => (user ? msg.author.id == user.id : true)).map(msg => msg.id)
 				if (!ids.length) return [0, false]
 
 				lastId = ids[ids.length]
 
-				await ctx.client.messages.purge(
-					ids,
-					channel.id,
-					'Purging messages'
-				)
+				await ctx.client.messages.purge(ids, channel.id, 'Purging messages')
 				deleted += ids.length
 
 				return [ids.length, true]
@@ -103,11 +93,7 @@ export default class Count extends Command {
 	}
 }
 
-async function chunks(
-	quantity: number,
-	limit: number,
-	fn: (chunk: number) => Promise<[number, boolean]>
-) {
+async function chunks(quantity: number, limit: number, fn: (chunk: number) => Promise<[number, boolean]>) {
 	let remainingQuantity = quantity
 
 	while (remainingQuantity > 0) {

@@ -36,7 +36,12 @@
 			},
 			"correctness": {
 				"useImportExtensions": "off",
-				"noNodejsModules": "off"
+				"noNodejsModules": "off",
+				"noInvalidUseBeforeDeclaration": "off",
+				"noUndeclaredVariables": "off"
+			},
+			"security": {
+				"noGlobalEval": "off"
 			}
 		}
 	},
