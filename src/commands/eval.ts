@@ -16,10 +16,6 @@ const codeblock = /\n?```$/
 const { parsed: envVars } = config()
 
 const options = {
-	async: createBooleanOption({
-		description: 'Whether to run the code asynchronously',
-		required: false
-	}),
 	code: createStringOption({
 		description: 'Code to run',
 		required: true,
@@ -46,7 +42,9 @@ export default class Eval extends Command {
 		if (!ctx.options.code) return ctx.write({ content: 'You need to provide code to run' })
 
 		try {
-			let res = await eval(ctx.options.async ? `(async () => {${ctx.options.code}})();` : ctx.options.code)
+			let res = await eval(
+				ctx.options.code.contains('await') ? `(async()=>{ ${ctx.options.code} })();` : ctx.options.code
+			)
 			if (typeof res !== 'string') res = inspect(res, { depth: 0, showHidden: true })
 
 			res = Object.values(envVars || {}).reduce(
