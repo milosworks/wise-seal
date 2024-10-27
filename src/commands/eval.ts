@@ -1,12 +1,4 @@
-import {
-	Command,
-	type CommandContext,
-	createBooleanOption,
-	createStringOption,
-	Declare,
-	IgnoreCommand,
-	Options
-} from 'seyfert'
+import { Command, type CommandContext, createStringOption, Declare, IgnoreCommand, Options } from 'seyfert'
 import { inspect } from 'node:util'
 import { config } from 'dotenv'
 
@@ -42,9 +34,8 @@ export default class Eval extends Command {
 		if (!ctx.options.code) return ctx.write({ content: 'You need to provide code to run' })
 
 		try {
-			let res = await eval(
-				ctx.options.code.contains('await') ? `(async()=>{ ${ctx.options.code} })();` : ctx.options.code
-			)
+			const isAsync = ctx.options.code.includes('await')
+			let res = await eval(isAsync ? `(async()=>{ ${ctx.options.code} })();` : ctx.options.code)
 			if (typeof res !== 'string') res = inspect(res, { depth: 0, showHidden: true })
 
 			res = Object.values(envVars || {}).reduce(
@@ -52,7 +43,9 @@ export default class Eval extends Command {
 				res
 			)
 
-			ctx.write({ content: `\`\`\`js\n${res}\n\`\`\`` })
+			ctx.write({
+				content: `\`\`\`js\n${res}\n\`\`\`${res === 'undefined' && isAsync ? ' Code is async and returned undefined, did you forget to put "return"?' : ''}`
+			})
 		} catch (error) {
 			return ctx.write({ content: `An error ocurred: \`\`\`\n${error}\`\`\`` })
 		}
