@@ -43,7 +43,7 @@ client.commands!.onCommand = file => {
 	const cmd = new file()
 	if (cmd instanceof EntryPointCommand) return cmd
 
-	cmd.guildId = cmd.name === 'prune' ? [constants.guildId, '1283541753072193599'] : [constants.guildId]
+	cmd.guildId = [constants.guildId]
 
 	if (!(cmd instanceof ContextMenuCommand) && cmd.ignore === undefined) cmd.ignore = IgnoreCommand.Message
 	return cmd

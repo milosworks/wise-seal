@@ -32,9 +32,11 @@ const options = {
 	})
 }
 
+// TODO: On large chunks show deleted messages so message doesnt dissapear
 @Declare({
 	name: 'prune',
-	description: 'Delete messages using a filter'
+	description: 'Delete messages using a filter',
+	defaultMemberPermissions: ['ManageMessages']
 })
 @Options(options)
 export default class Prune extends Command {
