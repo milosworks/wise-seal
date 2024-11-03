@@ -34,8 +34,7 @@ const options = {
 
 @Declare({
 	name: 'prune',
-	description: 'Delete messages using a filter',
-	defaultMemberPermissions: ['ManageMessages']
+	description: 'Delete messages using a filter'
 })
 @Options(options)
 export default class Prune extends Command {
@@ -52,20 +51,25 @@ export default class Prune extends Command {
 		await chunks(quantity, 100, async limit => {
 			try {
 				const messages = await ctx.client.channels.fetchMessages(channel.id, {
-					limit: limit == 100 ? limit - 1 : limit,
+					limit,
 					...(lastId ? { before: lastId } : {})
 				})
 				if (!messages.length) return [0, false]
-				if (messages.length == 1) {
+				if (messages.length === 1) {
 					await messages[0].delete('Purging messages')
 					deleted++
 					return [1, false]
 				}
 
-				const ids = messages.filter(msg => (user ? msg.author.id == user.id : true)).map(msg => msg.id)
-				if (!ids.length) return [0, false]
+				lastId = messages[messages.length - 1].id
 
-				lastId = ids[ids.length]
+				const ids = messages.filter(msg => (user ? msg.author.id === user.id : true)).map(msg => msg.id)
+				if (!ids.length) return [0, true]
+				if (ids.length === 1) {
+					await ctx.client.messages.delete(ids[0], channel.id, 'Purging messages')
+					deleted++
+					return [1, true]
+				}
 
 				await ctx.client.messages.purge(ids, channel.id, 'Purging messages')
 				deleted += ids.length
@@ -87,7 +91,7 @@ export default class Prune extends Command {
 				inputChannel ? ` in ${channel.toString()}` : ''
 			}${user ? ` from ${user.toString()}` : ''}`
 		})
-		setTimeout(async () => {
+		setTimeout(() => {
 			ctx.deleteResponse()
 		}, 3000)
 	}

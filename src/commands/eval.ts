@@ -30,6 +30,7 @@ const options = {
 @Options(options)
 export default class Eval extends Command {
 	async run(ctx: CommandContext<typeof options>) {
+		log.info('eval')
 		if (ctx.author.id !== '538421122920742942') return
 		if (!ctx.options.code) return ctx.write({ content: 'You need to provide code to run' })
 

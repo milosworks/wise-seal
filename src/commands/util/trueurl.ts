@@ -42,7 +42,7 @@ export default class TrueUrl extends Command {
 			const finalUrl = url ? res.url : url
 
 			ctx.write({
-				content: `Follow redirect: ${ctx.options.fetch}\nRemove query parameters:\nURL: ${ctx.options.removequery} \`\`\`\n${ctx.options.removequery ? finalUrl.split('?')[0] : finalUrl}\`\`\``
+				content: `\`\`\`\n${ctx.options.removequery ? finalUrl.split('?')[0] : finalUrl}\`\`\``
 			})
 		} catch (error) {
 			return ctx.write({ content: `An error ocurred: \`\`\`\n${error}\`\`\`` })

@@ -9,5 +9,5 @@ module.exports = config.bot({
 		events: 'events'
 	},
 	token: process.env.TOKEN ?? '',
-	intents: ['GuildMembers', 'MessageContent', 'Guilds', 'GuildMessages']
+	intents: ['GuildMembers', 'MessageContent', 'Guilds', 'GuildMessages', 'DirectMessages']
 })
