@@ -4,8 +4,7 @@ import { db } from '../database'
 import { guilds } from '../database/models/guilds'
 import { users } from '../database/models/users'
 
-const tikTokRegex =
-	/^(https?:\/\/)?(www\.|vm\.)?tiktok\.com\/@[\w.-]+\/video\/\d+|^(https?:\/\/)?vm\.tiktok\.com\/[\w-]+/i
+const tikTokRegex = /(https?:\/\/)?(www\.|vm\.)?tiktok\.com\/(@[\w.-]+\/video\/\d+|t\/[\w-]+|[\w-]+)\/?/gi
 
 export default createEvent({
 	data: {
@@ -24,15 +23,21 @@ export default createEvent({
 })
 
 function runTiktokParse(msg: Message) {
-	const contains = tikTokRegex.test(msg.content)
+	const contains = msg.content.match(tikTokRegex)
 	if (!contains) return
 
-	const parse = msg.content.replaceAll(/tiktok\.com/gm, 'vxtiktok.com')
+	const parsed: string[] = []
+
+	for (const match of contains) {
+		if (match.includes('vxtiktok.com')) continue
+		parsed.push(match.replaceAll(/tiktok\.com/gm, 'vxtiktok.com'))
+	}
 
 	msg.write({
-		content: `> Sent by ${msg.author.toString()}\n\n${parse}`
+		content: `> Sent by ${msg.author.toString()}\n\n${parsed.join('\n')}`
 	})
-	msg.delete()
+
+	if (msg.content.split(' ').every(part => tikTokRegex.test(part))) msg.delete()
 }
 
 async function runCount(msg: Message) {
