@@ -1,0 +1,1 @@
+ALTER TABLE "counts" ALTER COLUMN "random_emoji" SET NOT NULL;
