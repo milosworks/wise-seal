@@ -3,14 +3,14 @@ import type { tags } from 'typia'
 export namespace t {
 	export type Label<Value> = tags.TagBase<{
 		kind: 'label'
-		target: 'string'
+		target: 'string' | 'number' | 'boolean'
 		value: Value
 		exclusive: true
 	}>
 
 	export type Placeholder<Value> = tags.TagBase<{
 		kind: 'placeholder'
-		target: 'string'
+		target: 'string' | 'number' | 'boolean'
 		value: Value
 		exclusive: true
 	}>

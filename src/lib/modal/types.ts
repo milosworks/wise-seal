@@ -4,14 +4,14 @@ import type { tags } from 'typia'
 export namespace modal {
 	export type CustomId<Value> = tags.TagBase<{
 		kind: 'modal-customid'
-		target: 'string'
+		target: 'string' | 'number' | 'boolean'
 		value: Value
 		exclusive: true
 	}>
 
 	export type Style<Value extends TextInputStyle> = tags.TagBase<{
 		kind: 'modal-style'
-		target: 'string'
+		target: 'string' | 'number' | 'boolean'
 		value: Value
 		exclusive: true
 	}>
